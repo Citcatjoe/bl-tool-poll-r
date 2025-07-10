@@ -1,0 +1,35 @@
+@import '../../styles/_variables.scss';
+
+ul
+{
+    background-color: $gray;
+
+    li:not(:last-child)
+    {
+        border-bottom: 1px solid $gray-hr-light;
+    }
+
+    .eventDate 
+    {
+        border: 1px solid $gray-hr;
+        line-height: 0;
+
+        .eventDateDay 
+        {
+            line-height: 1;
+            top: 3px;
+        }
+
+        .eventDateMonth 
+        {
+            line-height: 1;
+            bottom: 3px;
+        }
+    }
+}
+
+a
+{
+    color: $blick;
+}
+

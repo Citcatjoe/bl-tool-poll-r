@@ -1,0 +1,155 @@
+@import './styles/_variables';
+@import './styles/_fonts';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+:root 
+{
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-synthesis: none;
+    // text-rendering: optimizeLegibility;
+    // -webkit-font-smoothing: antialiased;
+    // -moz-osx-font-smoothing: grayscale;
+}
+
+
+
+.App 
+{
+    max-width: 632px;
+    padding: 20px 20px 40px 20px;
+    //height: 330px;
+    background: $gray;
+
+    @media (max-width: $mobile) {
+        max-width: 100%;
+        padding: 10px 10px 40px 10px;
+    }
+}
+
+
+#answers {
+
+    .answer
+    {
+      margin-bottom: 3px;
+      
+  
+      &:hover .bar
+      {
+        border: 2px solid $blick;
+        
+      }
+  
+      &:last-child
+      {
+        margin-bottom: 0;
+      }
+  
+  
+      .bar 
+      {
+        //height: 50px;
+        border: 2px solid $gray;
+  
+        .bar-gauge
+        {
+          background: $blick;
+          width: 0px;
+        }
+
+        .bar-gauge-bg
+        {
+          background: rgba(255, 255, 255, 0.65);
+        }
+      }
+  
+      .percent
+      {
+        //display: flex;
+        align-items: center;
+        justify-content: center;
+  
+        //background: $gray;
+      }
+    }
+  }
+
+
+
+
+// CUSTOM CLASSES
+.border-blick {
+    border-color: $blick;
+  }
+  
+  .text-blick
+  {
+      color: #E2271B;
+  }
+
+
+// STATES
+.App.voted #answers .answer:hover .bar { border: 2px solid $gray !important; cursor: default; }
+
+
+.App.post-mode 
+{
+
+  background: rgba(50, 50, 50, 0.5);
+  max-width: 480px;
+
+  li:hover
+  {
+    cursor: default;
+  }
+
+  .bar
+  {
+    background: transparent;
+    border: 0 !important;
+
+    span { height: 6px;}
+  }
+
+  .label1
+  {
+    color: $blick-light;
+  }
+
+  .label2
+  {
+    color: white;
+  }
+
+  .label3
+  {
+    color: white;
+    padding-left: 0;
+    font-size: 19px;
+    padding-top: 9px;
+    padding-bottom: 26px;
+    line-height: 1.2;
+  }
+
+  .percent
+  {
+    color: white;
+    background: transparent !important;
+    opacity: 100 !important;
+    margin-top: -2px;
+    font-size: 19px;
+    padding-bottom: 13px;
+    right: 0;
+  }
+
+  #total-votes
+  {
+    color: white;
+    display: none;
+  }
+}

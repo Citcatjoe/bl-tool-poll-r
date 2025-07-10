@@ -1,0 +1,23 @@
+// Colors
+$blick: rgb(226, 0, 0);
+$blick-light: #FF8781;
+$gray: #f7f7f7;
+$gray-hr: #c9c9c9;
+$gray-hr-light: #dedede;
+
+// Breakpoints
+$mobile: 400px;
+
+// Custom classes
+.border-blick {
+    border-color: $blick;
+}
+
+
+.bg-custom-gray {
+    background-color: $blick;
+}
+
+.bg-gray {
+    background-color: $gray;
+}

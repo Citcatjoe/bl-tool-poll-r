@@ -1,0 +1,76 @@
+
+@font-face {
+    font-family: "blickextrabold";
+    src: url("./assets/fonts/code-next_extrabold-webfont.woff2") format("woff2"),
+        url("./assets/fonts/code-next_extrabold-webfont.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+  
+@font-face {
+    font-family: "blickregular";
+    src: url("./assets/fonts/code-next_regular-webfont.woff2") format("woff2"),
+        url("./assets/fonts/code-next_regular-webfont.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+  
+.font-blickr {
+    font-family: "blickregular";
+// -webkit-font-smoothing: antialiased;
+// -moz-osx-font-smoothing: grayscale;
+}
+
+.font-blickb {
+    font-family: "blickextrabold";
+// -webkit-font-smoothing: antialiased;
+// -moz-osx-font-smoothing: grayscale;
+}
+
+.font-i {
+    font-family: Inter;
+}
+
+.label1
+{
+    font-family: 'Inter';
+    font-size: 14px;
+    color: $blick;
+    
+}
+
+.label2
+{
+    font-family: 'blickextrabold';
+    font-size: 19px;
+    color: black;
+}
+
+.label3
+{
+    font-family: 'blickregular';
+    font-size: 16px;
+    color: black;
+    padding-top: 13px;
+    padding-bottom: 13px;
+}
+
+.percent
+{
+    font-family: 'blickextrabold';
+    font-size: 16px;
+    color: black;
+    display: none;
+}
+
+.percent-value
+{
+    font-family: 'blickextrabold';
+    
+    //opacity: 0;
+}
+
+#total-votes
+{
+    opacity: 0;
+}
