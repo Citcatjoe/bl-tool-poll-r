@@ -16,6 +16,9 @@ function App() {
     const [hasAnswered, setHasAnswered] = useState(false); // Nouvel état pour empêcher plusieurs votes
     const [postMode, setPostMode] = useState(false);
     const [loading, setLoading] = useState(true); // Par défaut, l'overlay est visible
+    
+    // Mode développement : passer à true pour désactiver la protection localStorage
+    const [isDev, setIsDev] = useState(false); // Passer à false en production
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -31,6 +34,25 @@ function App() {
                 const data = await fetchQuestionData(questionDoc);
                 setQuestion(data);
                 setDocId(questionDoc); // Stockez l'ID du document pour les mises à jour
+                
+                // Incrémenter le compteur de vues
+                await incrementCounterViews(questionDoc);
+                
+                // Vérifier si l'utilisateur a déjà voté pour cette question (via localStorage)
+                // Seulement si pas en mode développement
+                if (!isDev) {
+                    const hasVotedKey = `hasVoted_${questionDoc}`;
+                    const hasVotedForThisQuestion = localStorage.getItem(hasVotedKey) === 'true';
+                    
+                    if (hasVotedForThisQuestion) {
+                        setHasAnswered(true);
+                        console.log('L\'utilisateur a déjà voté pour cette question.');
+                        // Afficher directement les résultats puisque l'utilisateur a déjà voté
+                        setTimeout(() => {
+                            displayResults(data);
+                        }, 100); // Petit délai pour s'assurer que le DOM est prêt
+                    }
+                }
             } catch (error) {
                 console.error('Erreur lors du chargement de la question:', error);
             } finally {
@@ -47,7 +69,11 @@ function App() {
 
         // Définit le state postMode sur TRUE uniquement si le paramètre est présent et égal à "true"
         setPostMode(postModeParam === 'true');
-    }, []);
+        
+        if (isDev) {
+            console.log('🔧 Mode développement activé - Protection localStorage désactivée');
+        }
+    }, [isDev]);
 
     useEffect(() => {
         if (postMode && question) {
@@ -58,6 +84,21 @@ function App() {
     const calculateTotalVotes = (answers) => {
         if (!Array.isArray(answers)) return 0;
         return answers.reduce((total, answer) => total + (answer.answerCounter || 0), 0);
+    };
+
+    // Fonction pour incrémenter le compteur de vues
+    const incrementCounterViews = async (questionDoc) => {
+        if (!questionDoc) return;
+
+        try {
+            const questionRef = doc(db, 'embeds', questionDoc);
+            await updateDoc(questionRef, {
+                counterViews: increment(1)
+            });
+            console.log('Compteur de vues incrémenté');
+        } catch (error) {
+            console.error('Erreur lors de l\'incrémentation du compteur de vues:', error);
+        }
     };
 
     const calculateRoundedPercentages = (answers) => {
@@ -136,8 +177,10 @@ function App() {
             el.style.opacity = index === maxIndex ? '1' : '0.25';
         });
 
-        document.getElementById('total-votes').style.opacity = '0.3';
-        document.getElementById('total-votes-val').textContent = totalVotes;
+        if (totalVotes >= 100) {
+            document.getElementById('total-votes').style.opacity = '0.3';
+            document.getElementById('total-votes-val').textContent = totalVotes;
+        }
 
         console.log('Les résultats ont été mis à jour :', updatedQuestion.answers);
     };
@@ -190,15 +233,16 @@ function App() {
             return; // Empêche plusieurs votes
         }
 
+        // Vérification si l'utilisateur a déjà voté dans cette session
         if (hasAnswered) {
-            console.log('Vous avez déjà voté.');
+            console.log('Vous avez déjà voté pour cette question.');
             return; // Empêche plusieurs votes
         }
 
         if (!docId) return;
 
         try {
-            const questionRef = doc(db, 'questions', docId); // Référence au document Firebase
+            const questionRef = doc(db, 'embeds', docId); // Référence au document Firebase
 
             // Relire les données actuelles depuis Firestore
             const questionSnapshot = await getDoc(questionRef);
@@ -235,6 +279,15 @@ function App() {
 
             // Empêcher d'autres votes
             setHasAnswered(true);
+            
+            // Stocker dans localStorage seulement si pas en mode développement
+            if (!isDev) {
+                const hasVotedKey = `hasVoted_${docId}`;
+                localStorage.setItem(hasVotedKey, 'true');
+                console.log('Vote enregistré dans localStorage');
+            } else {
+                console.log('🔧 Mode dev : vote non enregistré dans localStorage');
+            }
 
             // Appeler displayResults après la mise à jour
             displayResults({
@@ -252,7 +305,7 @@ function App() {
             {postMode && <BtnDownload />}
             <span className="block w-full label1 mb-2">Donnez votre avis!</span>
             <span className="block antialiased w-full label2 mb-4">
-                {question ? question.questionTxt : 'Chargement...'}
+                {question ? question.pollTxt : 'Chargement...'}
             </span>
 
             <ul id="answers">
@@ -287,7 +340,7 @@ function App() {
                 )}
             </ul>
             <span id="total-votes" className="absolute text-xs left-1/2 -translate-x-1/2 bottom-3">
-                <span id="total-votes-val">100</span>
+                <span id="total-votes-val"></span>
                 <span id="total-votes-txt"> votes</span>
             </span>
         </div>

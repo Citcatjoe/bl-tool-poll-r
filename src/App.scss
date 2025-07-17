@@ -94,7 +94,10 @@
 
 
 // STATES
-.App.voted #answers .answer:hover .bar { border: 2px solid $gray !important; cursor: default; }
+.App.voted:not(.post-mode) #answers .answer:hover .bar { 
+  border: 2px solid $gray !important; 
+  cursor: default; 
+}
 
 
 .App.post-mode 
@@ -106,6 +109,8 @@
   li:hover
   {
     cursor: default;
+    border: 0;
+    
   }
 
   .bar
