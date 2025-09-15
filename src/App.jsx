@@ -3,8 +3,8 @@ import './App.scss';
 import BtnDownload from './components/BtnDownload/BtnDownload';
 import LoadingOverlay from './components/LoadingOverlay/LoadingOverlay';
 //import Calendar from './components/Calendar/Calendar';
-import { fetchQuestionData } from './services/api';
-import { dataLayerPushView, dataLayerPushSeeAllClick } from './services/analytics'; 
+import { fetchPollData } from './services/api';
+import { dataLayerPushView } from './services/analytics'; 
 import { db } from './services/firebase'; // Importez votre instance Firebase
 import { doc, updateDoc, arrayUnion, increment, getDoc } from 'firebase/firestore'; // Import des fonctions Firestore
 import { CountUp } from 'countup.js';
@@ -12,7 +12,7 @@ import html2canvas from 'html2canvas';
 
 function App() {
     const [docId, setDocId] = useState(null);
-    const [question, setQuestion] = useState(null);
+    const [poll, setPoll] = useState(null);
     const [hasAnswered, setHasAnswered] = useState(false); // Nouvel état pour empêcher plusieurs votes
     const [postMode, setPostMode] = useState(false);
     const [loading, setLoading] = useState(true); // Par défaut, l'overlay est visible
@@ -22,31 +22,34 @@ function App() {
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const questionDoc = urlParams.get('questionDoc');
+        const pollDoc = urlParams.get('pollDoc');
 
-        if (!questionDoc) {
-            console.log('Aucune question trouvée.');
+        if (!pollDoc) {
+            console.log('Aucune poll trouvée.');
             return;
         }
 
-        async function loadQuestion() {
+        async function loadPoll() {
             try {
-                const data = await fetchQuestionData(questionDoc);
-                setQuestion(data);
-                setDocId(questionDoc); // Stockez l'ID du document pour les mises à jour
+                const data = await fetchPollData(pollDoc);
+                setPoll(data);
+                setDocId(pollDoc); // Stockez l'ID du document pour les mises à jour
                 
                 // Incrémenter le compteur de vues
-                await incrementCounterViews(questionDoc);
+                await incrementCounterViews(pollDoc);
                 
-                // Vérifier si l'utilisateur a déjà voté pour cette question (via localStorage)
+                // Envoyer l'événement analytics pour la vue de la poll
+                dataLayerPushView(pollDoc);
+                
+                // Vérifier si l'utilisateur a déjà voté pour cette poll (via localStorage)
                 // Seulement si pas en mode développement
                 if (!isDev) {
-                    const hasVotedKey = `hasVoted_${questionDoc}`;
-                    const hasVotedForThisQuestion = localStorage.getItem(hasVotedKey) === 'true';
+                    const hasVotedKey = `hasVoted_${pollDoc}`;
+                    const hasVotedForThisPoll = localStorage.getItem(hasVotedKey) === 'true';
                     
-                    if (hasVotedForThisQuestion) {
+                    if (hasVotedForThisPoll) {
                         setHasAnswered(true);
-                        console.log('L\'utilisateur a déjà voté pour cette question.');
+                        console.log('L\'utilisateur a déjà voté pour cette poll.');
                         // Afficher directement les résultats puisque l'utilisateur a déjà voté
                         setTimeout(() => {
                             displayResults(data);
@@ -54,13 +57,13 @@ function App() {
                     }
                 }
             } catch (error) {
-                console.error('Erreur lors du chargement de la question:', error);
+                console.error('Erreur lors du chargement de la poll:', error);
             } finally {
                 setLoading(false); // Masquer l'overlay une fois le chargement terminé
             }
         }
 
-        loadQuestion();
+        loadPoll();
     }, []);
 
     useEffect(() => {
@@ -76,68 +79,59 @@ function App() {
     }, [isDev]);
 
     useEffect(() => {
-        if (postMode && question) {
-            displayResultsInPostMode(question); // Affiche les résultats sans animations
+        if (postMode && poll) {
+            displayResultsInPostMode(poll); // Affiche les résultats sans animations
         }
-    }, [postMode, question]);
+    }, [postMode, poll]);
 
-    const calculateTotalVotes = (answers) => {
-        if (!Array.isArray(answers)) return 0;
-        return answers.reduce((total, answer) => total + (answer.answerCounter || 0), 0);
+    // Calcule le total des votes à partir du tableau de compteurs
+    const calculateTotalVotes = (counters) => {
+        if (!Array.isArray(counters)) return 0;
+        return counters.reduce((total, count) => total + (count || 0), 0);
     };
 
     // Fonction pour incrémenter le compteur de vues
-    const incrementCounterViews = async (questionDoc) => {
-        if (!questionDoc) return;
+    const incrementCounterViews = async (pollDoc) => {
+        if (!pollDoc) return;
 
         try {
-            const questionRef = doc(db, 'embeds', questionDoc);
-            await updateDoc(questionRef, {
+            const pollRef = doc(db, 'embeds', pollDoc);
+            await updateDoc(pollRef, {
                 counterViews: increment(1)
             });
-            console.log('Compteur de vues incrémenté');
+            //console.log('Compteur de vues incrémenté');
         } catch (error) {
-            console.error('Erreur lors de l\'incrémentation du compteur de vues:', error);
+            //console.error('Erreur lors de l\'incrémentation du compteur de vues:', error);
         }
     };
 
-    const calculateRoundedPercentages = (answers) => {
-        const totalVotes = calculateTotalVotes(answers);
+    // Calcule les pourcentages arrondis à partir du tableau de compteurs
+    const calculateRoundedPercentages = (counters) => {
+        const totalVotes = calculateTotalVotes(counters);
         if (totalVotes === 0) {
-            return answers.map(() => 0); // Si aucun vote, tous les pourcentages sont 0
+            return counters.map(() => 0);
         }
-
-        // Calculer les pourcentages initiaux
-        let rawPercentages = answers.map((answer) =>
-            ((answer.answerCounter || 0) / totalVotes) * 100
-        );
-
-        // Arrondir les pourcentages
+        let rawPercentages = counters.map((count) => (count / totalVotes) * 100);
         let roundedPercentages = rawPercentages.map(Math.round);
-
-        // Calculer la différence entre la somme des pourcentages arrondis et 100
         const difference = 100 - roundedPercentages.reduce((sum, p) => sum + p, 0);
-
-        // Ajuster les pourcentages pour compenser la différence
         for (let i = 0; i < Math.abs(difference); i++) {
             const index = rawPercentages.findIndex((value, idx) =>
                 difference > 0
-                    ? roundedPercentages[idx] < Math.ceil(value) // Ajouter 1 si possible
-                    : roundedPercentages[idx] > Math.floor(value) // Retirer 1 si possible
+                    ? roundedPercentages[idx] < Math.ceil(value)
+                    : roundedPercentages[idx] > Math.floor(value)
             );
             if (index !== -1) {
                 roundedPercentages[index] += difference > 0 ? 1 : -1;
             }
         }
-
         return roundedPercentages;
     };
 
-    const displayResults = (updatedQuestion) => {
+    const displayResults = (updatePoll) => {
         if (!document.querySelector('.App').classList.contains('voted')) {
             document.querySelector('.App').classList.add('voted');
         }
-        const totalVotes = calculateTotalVotes(updatedQuestion.answers);
+        const totalVotes = calculateTotalVotes(updatePoll.answerCounters);
 
         document.querySelectorAll('.percent').forEach((el) => {
             el.style.display = 'flex';
@@ -145,7 +139,7 @@ function App() {
 
         document.querySelectorAll('.percent-value').forEach((el, index) => {
             const targetValue = Math.round(
-                ((updatedQuestion.answers[index].answerCounter || 0) / totalVotes) * 100
+                ((updatePoll.answerCounters[index] || 0) / totalVotes) * 100
             );
             const countUp = new CountUp(el, targetValue, { duration: 2 });
             if (!countUp.error) {
@@ -157,73 +151,65 @@ function App() {
 
         document.querySelectorAll('.bar-gauge').forEach((el, index) => {
             const targetWidth = `${Math.round(
-            ((updatedQuestion.answers[index].answerCounter || 0) / totalVotes) * 100
+                ((updatePoll.answerCounters[index] || 0) / totalVotes) * 100
             )}%`;
             el.style.transition = 'width 2s cubic-bezier(0.19, 1, 0.22, 1)';
             el.style.width = targetWidth;
         });
 
         // Find the index of the element with the highest width
-        const maxIndex = updatedQuestion.answers.reduce((maxIdx, answer, idx, arr) => {
-            return (arr[maxIdx].answerCounter || 0) < (answer.answerCounter || 0) ? idx : maxIdx;
+        const maxIndex = updatePoll.answerCounters.reduce((maxIdx, count, idx, arr) => {
+            return arr[maxIdx] < count ? idx : maxIdx;
         }, 0);
 
         // Update opacity for all .bar-gauge elements
         document.querySelectorAll('.bar-gauge').forEach((el, index) => {
-            el.style.opacity = index === maxIndex ? '1' : '0.25';
+            el.style.opacity = index === maxIndex ? '1' : '0.5';
         });
 
         document.querySelectorAll('.percent').forEach((el, index) => {
-            el.style.opacity = index === maxIndex ? '1' : '0.25';
+            el.style.opacity = index === maxIndex ? '1' : '0.5';
         });
 
         if (totalVotes >= 100) {
             document.getElementById('total-votes').style.opacity = '0.3';
             document.getElementById('total-votes-val').textContent = totalVotes;
         }
-
-        console.log('Les résultats ont été mis à jour :', updatedQuestion.answers);
+        //console.log('Les résultats ont été mis à jour :', updatePoll.answerCounters);
     };
 
-    const displayResultsInPostMode = (updatedQuestion) => {
-        if (!updatedQuestion || !updatedQuestion.answers) {
-            console.error('Les données de la question sont invalides.');
+    const displayResultsInPostMode = (updatePoll) => {
+        if (!updatePoll || !updatePoll.answerCounters) {
+            console.error('Les données de la poll sont invalides.');
             return;
         }
-
-        const totalVotes = calculateTotalVotes(updatedQuestion.answers);
-
+        const totalVotes = calculateTotalVotes(updatePoll.answerCounters);
         document.querySelectorAll('.percent').forEach((el) => {
             el.style.display = 'flex';
         });
-
         // Met à jour les pourcentages directement sans animation
         document.querySelectorAll('.percent-value').forEach((el, index) => {
             const targetValue = Math.round(
-                ((updatedQuestion.answers[index].answerCounter || 0) / totalVotes) * 100
+                ((updatePoll.answerCounters[index] || 0) / totalVotes) * 100
             );
-            el.textContent = targetValue; // Affiche directement la valeur
+            el.textContent = targetValue;
         });
-
         // Met à jour les barres de progression sans animation
         document.querySelectorAll('.bar-gauge').forEach((el, index) => {
             const targetWidth = `${Math.round(
-                ((updatedQuestion.answers[index].answerCounter || 0) / totalVotes) * 100
+                ((updatePoll.answerCounters[index] || 0) / totalVotes) * 100
             )}%`;
-            el.style.width = targetWidth; // Définit directement la largeur
+            el.style.width = targetWidth;
         });
-
         // Trouver l'index de l'élément avec le plus de votes
-        const maxIndex = updatedQuestion.answers.reduce((maxIdx, answer, idx, arr) => {
-            return (arr[maxIdx].answerCounter || 0) < (answer.answerCounter || 0) ? idx : maxIdx;
+        const maxIndex = updatePoll.answerCounters.reduce((maxIdx, count, idx, arr) => {
+            return arr[maxIdx] < count ? idx : maxIdx;
         }, 0);
-
         // Met à jour la couleur de fond pour tous les éléments .bar-gauge
         document.querySelectorAll('.bar-gauge').forEach((el, index) => {
-            el.style.backgroundColor = index === maxIndex ? '' : '#FF8781'; // Couleur de base ou #FF8781
+            el.style.backgroundColor = index === maxIndex ? '' : '#e0291fff';
         });
-
-        console.log('Les résultats pour le mode Post ont été affichés :', updatedQuestion.answers);
+        console.log('Les résultats pour le mode Post ont été affichés :', updatePoll.answerCounters);
     };
 
     const handleAnswerClick = async (answerId) => {
@@ -235,52 +221,37 @@ function App() {
 
         // Vérification si l'utilisateur a déjà voté dans cette session
         if (hasAnswered) {
-            console.log('Vous avez déjà voté pour cette question.');
+            console.log('Vous avez déjà voté pour cette poll.');
             return; // Empêche plusieurs votes
         }
 
         if (!docId) return;
 
         try {
-            const questionRef = doc(db, 'embeds', docId); // Référence au document Firebase
-
+            const pollRef = doc(db, 'embeds', docId);
             // Relire les données actuelles depuis Firestore
-            const questionSnapshot = await getDoc(questionRef);
-            if (!questionSnapshot.exists()) {
-                console.error('Le document de la question est introuvable.');
+            const pollSnapshot = await getDoc(pollRef);
+            if (!pollSnapshot.exists()) {
+                console.error('Le document de la poll est introuvable.');
                 return;
             }
-
-            const currentQuestion = questionSnapshot.data();
-            const currentAnswers = currentQuestion.answers;
-
-            if (!Array.isArray(currentAnswers)) {
-                console.error('La structure des réponses est invalide.');
-                return;
-            }
-
-            // Mettre à jour uniquement le champ answerCounter tout en conservant les autres champs
-            const updatedAnswers = [...currentAnswers];
-            updatedAnswers[answerId] = {
-                ...updatedAnswers[answerId],
-                answerCounter: (updatedAnswers[answerId].answerCounter || 0) + 1,
-            };
-
-            // Mettre à jour l'ensemble des réponses dans Firestore
-            await updateDoc(questionRef, {
-                answers: updatedAnswers, // Forcer la structure à rester un tableau
+            const currentPoll = pollSnapshot.data();
+            const currentCounters = Array.isArray(currentPoll.answerCounters)
+                ? currentPoll.answerCounters
+                : [];
+            // Mettre à jour uniquement le compteur de la réponse cliquée
+            const updatedCounters = [...currentCounters];
+            updatedCounters[answerId] = (updatedCounters[answerId] || 0) + 1;
+            // Mettre à jour answerCounters dans Firestore
+            await updateDoc(pollRef, {
+                answerCounters: updatedCounters,
             });
-
             // Mettre à jour l'état local pour refléter les changements
-            setQuestion((prevQuestion) => ({
-                ...prevQuestion,
-                answers: updatedAnswers,
+            setPoll((prevPoll) => ({
+                ...prevPoll,
+                answerCounters: updatedCounters,
             }));
-
-            // Empêcher d'autres votes
             setHasAnswered(true);
-            
-            // Stocker dans localStorage seulement si pas en mode développement
             if (!isDev) {
                 const hasVotedKey = `hasVoted_${docId}`;
                 localStorage.setItem(hasVotedKey, 'true');
@@ -288,11 +259,10 @@ function App() {
             } else {
                 console.log('🔧 Mode dev : vote non enregistré dans localStorage');
             }
-
             // Appeler displayResults après la mise à jour
             displayResults({
-                ...currentQuestion,
-                answers: updatedAnswers,
+                ...currentPoll,
+                answerCounters: updatedCounters,
             });
         } catch (error) {
             console.error('Erreur lors de la mise à jour du document:', error);
@@ -303,32 +273,33 @@ function App() {
         <div className={`App relative ${postMode ? 'post-mode' : ''}`}>
             {loading && <LoadingOverlay />}
             {postMode && <BtnDownload />}
-            <span className="block w-full label1 mb-2">Donnez votre avis!</span>
+            <span className="block text-sm w-full label1 mb-2">Donnez votre avis!</span>
             <span className="block antialiased w-full label2 mb-4">
-                {question ? question.pollTxt : 'Chargement...'}
+                {poll ? poll.pollTxt : 'Chargement...'}
             </span>
 
             <ul id="answers">
-                {question && question.answers ? (
+                {poll && poll.answerTxts ? (
                     (() => {
-                        const roundedPercentages = calculateRoundedPercentages(question.answers);
-                        return question.answers.map((answer, index) => {
-                            const percent = Math.round(roundedPercentages[index]); // Arrondi à l'entier
+                        // On suppose que poll.answerCounters existe et a la même longueur
+                        const roundedPercentages = calculateRoundedPercentages(poll.answerCounters);
+                        return poll.answerTxts.map((txt, index) => {
+                            const percent = Math.round(roundedPercentages[index]);
                             return (
                                 <li
                                     key={index}
                                     answer-id={`${index}`}
                                     className="answer flex gap-x-2 relative mb-0 cursor-pointer"
-                                    onClick={() => handleAnswerClick(index)} // Appelle la fonction pour mettre à jour Firebase
+                                    onClick={() => handleAnswerClick(index)}
                                 >
                                     <span className="relative block bar flex-1 item-center bg-white rounded-md">
                                         {postMode && (
                                             <span className="absolute bar-gauge-bg left-0 right-0 block h-1 bottom-0 rounded-full"></span>
                                         )}
                                         <span className="absolute bar-gauge left-0 block h-1 bottom-0 rounded-full"></span>
-                                        <p className="label3 left-4 w-10/12 pl-4">{answer.answerTxt}</p>
+                                        <p className="label3 antialiased">{txt}</p>
                                     </span>
-                                    <span className="percent absolute right-4 top-1/2 -translate-y-1/2">
+                                    <span className="percent absolute top-1/2 -translate-y-1/2">
                                         <span className="percent-value">{percent}</span>% {/* Affiche le pourcentage entier */}
                                     </span>
                                 </li>

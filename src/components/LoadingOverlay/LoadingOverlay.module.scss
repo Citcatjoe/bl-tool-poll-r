@@ -1,12 +1,10 @@
-@import '../../styles/_variables.scss';
-
 .overlay {
   position: absolute;
   top: 0;
   right: 0;
   bottom: -1px;
   left: 0;
-  background-color: $gray; /* Couleur de fond semi-transparente */
+  background-color: var(--color-fill-weak); /* Couleur de fond semi-transparente */
   z-index: 1000;
 }
 
@@ -20,8 +18,8 @@
 .spinner {
   width: 30px;
   height: 30px;
-  border: 3px solid red;
-  border-top: 2px solid #fff;
+  border: 3px solid var(--color-fill-brand);
+  border-top: 2px solid var(--color-fill-weak);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

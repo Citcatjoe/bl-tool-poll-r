@@ -1,7 +1,17 @@
-TRACKING
+18 aout 2025
 
-Compteur de vue Firestore fonctionne. Testé le 15 juillet
 
-Pas de tracking Google analytics. Les fonction sont commentées, appelée mais jamais utilisé. 
+DONE
+- Installé OK
+- base.css OK
+- Compteurs Firebase OK
+- Compteurs Datalayer OK
+- Darkmode OK
+- Loading overlay OK
+- Regler les variable MQ OK
+- Retirer les console log OK
+- Donner un title OK
 
-ATTENTION, LES EVENT SONT FAUX !!! FAIRE TRES ATTENTION SI CES FONCTIONS SONT REUSE
+TODO
+- Multibrand
+

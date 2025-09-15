@@ -2,7 +2,7 @@
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-export async function fetchQuestionData(docRef) {
+export async function fetchPollData(docRef) {
   try {
     const questionRef = doc(db, 'embeds', docRef); // Remplacez 'questions' par le nom de votre collection
     const docSnap = await getDoc(questionRef);
