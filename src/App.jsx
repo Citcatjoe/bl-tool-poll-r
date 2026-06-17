@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'; 
+import { useState, useEffect } from 'react';
 import './App.scss';
 import BtnDownload from './components/BtnDownload/BtnDownload';
 import LoadingOverlay from './components/LoadingOverlay/LoadingOverlay';
 //import Calendar from './components/Calendar/Calendar';
 import { fetchPollData } from './services/api';
-import { dataLayerPushView } from './services/analytics'; 
+import { dataLayerPushView } from './services/analytics';
 import { db } from './services/firebase'; // Importez votre instance Firebase
 import { doc, updateDoc, arrayUnion, increment, getDoc } from 'firebase/firestore'; // Import des fonctions Firestore
 import { CountUp } from 'countup.js';
@@ -12,11 +12,15 @@ import html2canvas from 'html2canvas';
 
 function App() {
     const [docId, setDocId] = useState(null);
+    const [brand, setBrand] = useState(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('brand') || 'blick';
+    });
     const [poll, setPoll] = useState(null);
     const [hasAnswered, setHasAnswered] = useState(false); // Nouvel état pour empêcher plusieurs votes
     const [postMode, setPostMode] = useState(false);
     const [loading, setLoading] = useState(true); // Par défaut, l'overlay est visible
-    
+
     // Mode développement : passer à true pour désactiver la protection localStorage
     const [isDev, setIsDev] = useState(false); // Passer à false en production
 
@@ -34,19 +38,22 @@ function App() {
                 const data = await fetchPollData(pollDoc);
                 setPoll(data);
                 setDocId(pollDoc); // Stockez l'ID du document pour les mises à jour
-                
+                if (data) {
+                    setBrand(data.brand || 'blick');
+                }
+
                 // Incrémenter le compteur de vues
                 await incrementCounterViews(pollDoc);
-                
+
                 // Envoyer l'événement analytics pour la vue de la poll
                 dataLayerPushView(pollDoc);
-                
+
                 // Vérifier si l'utilisateur a déjà voté pour cette poll (via localStorage)
                 // Seulement si pas en mode développement
                 if (!isDev) {
                     const hasVotedKey = `hasVoted_${pollDoc}`;
                     const hasVotedForThisPoll = localStorage.getItem(hasVotedKey) === 'true';
-                    
+
                     if (hasVotedForThisPoll) {
                         setHasAnswered(true);
                         console.log('L\'utilisateur a déjà voté pour cette poll.');
@@ -72,7 +79,7 @@ function App() {
 
         // Définit le state postMode sur TRUE uniquement si le paramètre est présent et égal à "true"
         setPostMode(postModeParam === 'true');
-        
+
         if (isDev) {
             console.log('🔧 Mode développement activé - Protection localStorage désactivée');
         }
@@ -270,10 +277,10 @@ function App() {
     };
 
     return (
-        <div className={`App relative ${postMode ? 'post-mode' : ''}`}>
+        <div className={`App brand-${brand} relative ${postMode ? 'post-mode' : ''}`}>
             {loading && <LoadingOverlay />}
             {postMode && <BtnDownload />}
-            <span className="block text-sm w-full label1 mb-2">Donnez votre avis!</span>
+            <span className="block w-full label1 mb-2">Donnez votre avis!</span>
             <span className="block antialiased w-full label2 mb-4">
                 {poll ? poll.pollTxt : 'Chargement...'}
             </span>
@@ -292,11 +299,11 @@ function App() {
                                     className="answer flex gap-x-2 relative mb-0 cursor-pointer"
                                     onClick={() => handleAnswerClick(index)}
                                 >
-                                    <span className="relative block bar flex-1 item-center bg-white rounded-md">
+                                    <span className="relative block bar flex-1 item-center bg-white">
                                         {postMode && (
                                             <span className="absolute bar-gauge-bg left-0 right-0 block h-1 bottom-0 rounded-full"></span>
                                         )}
-                                        <span className="absolute bar-gauge left-0 block h-1 bottom-0 rounded-full"></span>
+                                        <span className="absolute bar-gauge left-0 block h-1 bottom-0 "></span>
                                         <p className="label3 antialiased">{txt}</p>
                                     </span>
                                     <span className="percent absolute top-1/2 -translate-y-1/2">

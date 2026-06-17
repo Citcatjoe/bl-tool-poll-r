@@ -3,14 +3,58 @@
   <head>
     <script>window.blickDataLayer = [];</script>
     <meta charset="UTF-8" />
+    <meta name="robots" content="noindex">
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://utils.blick.ch/static/global/css/base.css" />
+    <link rel="stylesheet" href="/src/styles/pme.scss" />
     <title>Blick Tools poll app</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script type="text/javascript" src="https://www.blick.ch/assets/iframeHeightAdjustment.js"></script>
+
+    <script>
+  (function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const brand = urlParams.get('brand');
+    console.log("Brand détecté :", brand); // <--- AJOUTE CECI
+
+    if (brand === 'pme') {
+      function sendHeightToPME() {
+        const height = document.body.scrollHeight;
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "iframe-height", height: height }, "*");
+        }
+      }
+
+      window.addEventListener("message", function (event) {
+        if (event.data && event.data.type === "dark-mode") {
+          console.log("Iframe: Message dark-mode reçu", event.data.isDark);
+          const appElement = document.querySelector(".App");
+          
+          if (appElement) {
+            appElement.classList.toggle("dark", event.data.isDark);
+          } else {
+            document.body.classList.toggle("dark", event.data.isDark);
+          }
+          setTimeout(sendHeightToPME, 100); 
+        }
+      });
+
+      // --- AJOUT : Signaler au parent que l'iframe est prête à écouter ---
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "iframe-ready" }, "*");
+      }
+
+      window.addEventListener("load", sendHeightToPME);
+      if (typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(sendHeightToPME).observe(document.body);
+      }
+    }
+  })();
+</script>
+
   </body>
 </html>

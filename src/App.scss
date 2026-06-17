@@ -11,20 +11,16 @@
 {
     font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
     font-synthesis: none;
-    // text-rendering: optimizeLegibility;
-    // -webkit-font-smoothing: antialiased;
-    // -moz-osx-font-smoothing: grayscale;
 }
 
-
+//--------------------------------------------------------------------//
 
 .App 
 {
-    max-width: 632px;
+    max-width: 100%;
     min-height: 200px;
     padding: 20px 20px 40px 20px;
-    //height: 330px;
-    background: var(--color-fill-weak);
+    
 
     @media (max-width: $mobile) {
         max-width: 100%;
@@ -32,105 +28,204 @@
     }
 }
 
-.label1
+.App.brand-blick
+{
+    background: var(--color-fill-weak);
+}
+
+.App.brand-pme
+{
+    background: var(--color-fill-weak);
+}
+
+//--------------------------------------------------------------------//
+
+.label1 
+{ 
+    font-size: .875rem;
+    line-height: 1.25rem;
+}
+.brand-blick .label1
 {
     font-family: InterVariable;
     color: var(--color-text-brand);
     font-weight: 500;
+    
 }
+.brand-pme .label1
+{
+    font-family: Roboto;
+    color: var(--pme-color-fill-brand);
+    font-weight: 400;
+}
+
+//--------------------------------------------------------------------//
 
 .label2 
+{ 
+    font-size: 19px; 
+    line-height: 1.2;
+}
+.brand-blick .label2 
 {
     font-family: BlickVariable;
-    font-size: 19px;
     color: var(--color-text-default);
-    line-height: 1.2;
     font-weight: 600;
+    
+}
+.brand-pme .label2  
+{
+    font-family: Literata;
+    color: var(--pme-color-text-default);
+    font-weight: 700;
+
+    @media (min-width: $mobile-pme) 
+    { 
+      font-size: 21px; 
+      line-height: 1.3;
+    }
 }
 
-.label3
-{
-    font-family: InterVariable;
-    font-weight: 400;
-    font-size: 16px;
-    line-height: 1.5;
+//--------------------------------------------------------------------//
 
-    width: calc(100% - 60px); 
-    
-    color: var(--color-text-default);
-    padding: 13px 15px 13px 15px;
+.label3 
+{ 
+  
+  line-height: 1.5; 
+  width: calc(100% - 60px); 
+  padding: 13px 15px 13px 15px;  
 
-    @media (max-width: $mobile) {
+  @media (max-width: $mobile) {
         //font-size: 16px;
         padding: 13px 10px 13px 10px;
     }
+}  
+.brand-blick .label3
+{
+    font-family: InterVariable;
+    font-weight: 400;
+    color: var(--color-text-default);
+    font-size: 16px; 
+}
+.brand-pme .label3
+{
+    font-family: Roboto;
+    font-weight: 400;
+    color: var(--pme-color-text-default);
+    font-size: 16px; 
 }
 
+//--------------------------------------------------------------------//
 
+ul#answers
+{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
-ul#answers {
+li.answer {
+  margin-bottom: 3px;
+  border: 2px solid transparent;
+  
+}
 
-    li.answer
-    {
-      margin-bottom: 3px;
-      border: 2px solid transparent;
-      border-radius: 0.375rem;
+.brand-blick li.answer
+{
+    border-radius: 0.375rem;
+}
 
-      &:hover 
-      {
-        border: 2px solid var(--color-stroke-brand);
-        cursor: pointer;
-      }
-     
-  
-      &:last-child
-      {
-        margin-bottom: 0;
-      }
-  
-  
-      .bar 
-      {
-        background: var(--color-fill-default);
-        
-  
-        .bar-gauge
-        {
-          background: var(--color-fill-brand);
-          width: 0px;
-        }
+.brand-pme li.answer
+{
+    border-radius: 0;
+}
 
-        .bar-gauge-bg
-        {
-          background: rgba(255, 255, 255, 0.65);
-        }
-      }
-  
-      .percent
-      {
-        font-family: blickVariable;
-        font-weight: 600;
-        color: var(--color-text-default);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        right: 16px;
-  
-        //background: $gray;
-        .percent-value
-        {
-          font-family: blickVariable;;
-        }
-      }
-    }
-  }
+.brand-blick li.answer:hover {
+  border: 2px solid var(--color-stroke-brand);
+  cursor: pointer;
+}
 
+.brand-pme li.answer:hover {
+  border: 2px solid var(--pme-color-fill-brand);
+}
+
+.brand-blick li.answer:last-child {
+  margin-bottom: 0;
+}
+
+.brand-blick li.answer .bar {
+  background: var(--color-fill-default);
+  border-radius: 0.375rem;
+}
+
+//--------------------------------------------------------------------//
+
+.bar-gauge {
+    width: 0px;
+}
+
+.brand-blick .bar .bar-gauge {
+  background: var(--color-fill-brand);
+  
+}
+
+.brand-pme .bar .bar-gauge {
+  background: var(--pme-color-fill-brand);
+}
+
+//--------------------------------------------------------------------//
+
+.brand-blick .bar-gauge-bg {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+//--------------------------------------------------------------------//
+
+.percent {
+  
+  
+  display: none;
+  align-items: center;
+  justify-content: center;
+  right: 16px;
+}
+
+.brand-blick .percent
+{
+  font-family: blickVariable;
+  font-weight: 600;
+  color: var(--color-text-default);
+}
+
+.brand-pme .percent
+{
+  font-family: Literata;
+  font-weight: 700;
+  color: var(--pme-color-text-default);
+}
+
+// .brand-blick li.answer .percent .percent-value {
+//   font-family: blickVariable;
+// }
+
+//--------------------------------------------------------------------//
 #total-votes
 {
-    color: var(--color-text-default);
+    
     opacity: 0;
 }
 
+.brand-blick #total-votes
+{
+    color: var(--color-text-default);
+}
+
+.brand-pme #total-votes
+{
+    //color: var(--pme-color-text-default);
+    font-family: Roboto;
+}
+//--------------------------------------------------------------------//
 
 
 
@@ -158,7 +253,12 @@ ul#answers {
     
   }
 
-  .bar
+  li.answer .bar
+  {
+    background: transparent !important;
+  }
+
+  .gauge
   {
     background: transparent !important;
     border: 0 !important;
