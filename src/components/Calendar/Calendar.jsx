@@ -1,9 +1,9 @@
 import React from 'react';
 import s from './Calendar.module.scss'; // Import des styles spécifiques au composant via CSS Modules
 import { doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '../../services/firebase'; // Assurez-vous que `db` est correctement exporté depuis votre fichier firebase.js
+import { db } from '@rms/services'; // Assurez-vous que `db` est correctement exporté depuis votre fichier firebase.js
 import LoadingOverlay from '../LoadingOverlay/LoadingOverlay'; // Import du composant LoadingOverlay
-import { dataLayerPushSeeAllClick, dataLayerPushLinkGlobalClick } from '../../services/analytics';
+import { dataLayerPushSeeAllClick, dataLayerPushLinkGlobalClick } from '@rms/services';
 
 async function incrementClickCounter(docId) {
   try {

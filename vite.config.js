@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  envDir: '../../',
   base: "./", // Remplace par '/ton-dossier/' si ton site est dans un sous-dossier
   plugins: [react()],
   css: {
